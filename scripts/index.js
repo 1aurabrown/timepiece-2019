@@ -1,110 +1,139 @@
+var columns;
+var rows;
+var ctx;
+var numClocks;
+var offset;
+var canvas;
+var start;
+var clocks;
+var radius;
+
 $(document).ready( function() {
-    var clocks;
-    var start = moment();
-    var numClocks;
-    var offset;
-    var rows;
-    var columns;
-    var canvas = document.getElementById('canvas');
-    var ctx = canvas.getContext('2d');
-    var radius;
-    ctx.webkitImageSmoothingEnabled = true;
-    ctx.imageSmoothingEnabled = true;
+  start = moment();
+  canvas = document.getElementById('canvas');
+  ctx = canvas.getContext('2d');
+  ctx.webkitImageSmoothingEnabled = true;
+  ctx.imageSmoothingEnabled = true;
 
-    // resize the canvas to fill browser window dynamically
-    window.addEventListener('resize', resizeCanvas, false);
+  // resize the canvas to fill browser window dynamically
+  window.addEventListener('resize', resizeCanvas, false);
 
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      numClocks = 60;
-      offset = getRandomInt(-29, 30);
-      radius = 60;
+  resizeCanvas();
+  window.setInterval(function() {
+    window.requestAnimationFrame(draw);
+  }, 50)
 
-      /**
-       * Your drawings need to be inside this function otherwise they will be reset when
-       * you resize the browser window and the canvas goes will be cleared.
-       */
-    }
-
-    resizeCanvas();
-    window.setInterval(function() {
-      window.requestAnimationFrame(draw);
-    }, 50)
-
-    function draw() {
-      var i;
-      for (i = 0; i < numClocks; i++) {
-        var offsetIndex = i + offset;
-        var factor = ((numClocks / 16) + (60 - offsetIndex / 8)) / 60;
-        drawClock(factor);
-      };
-    }
-
-    function drawClock(factor) {
-      drawFace(factor);
-      drawNumbers();
-      drawTime(factor);
-    };
-    function drawFace(factor) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(0, 0, radius, 0, 2 * Math.PI);
-      ctx.fillStyle = factor === 1.0 ? 'white' : '#5e54e2';
-      ctx.fill();
-      ctx.lineWidth = radius * 0.1;
-      ctx.restore();
-    };
-    function drawNumbers() {
-      ctx.save();
-      ctx.fillStyle = 'black';
-      ctx.font = radius * 0.15 + "px arial";
-      ctx.textBaseline = "middle";
-      ctx.textAlign = "center";
-
-      var i;
-      for (i = 0; i < 12; i++) {
-        var num = i + 1;
-        var ang = num * Math.PI / 6;
-        ctx.rotate(ang);
-        ctx.translate(0, -radius * 0.85);
-        ctx.rotate(-ang);
-        ctx.fillText(num.toString(), 0, 0);
-        ctx.rotate(ang);
-        ctx.translate(0, radius * 0.85);
-        ctx.rotate(-ang);
-      };
-      ctx.restore();
-    };
-    function drawTime(factor) {
-      var adjustedNow, elapsed, hour, minute, second;
-      elapsed = moment().diff(start);
-      adjustedNow = moment(start).add(elapsed * factor, 'milliseconds');
-      hour = adjustedNow.hours() % 12;
-      minute = adjustedNow.minutes();
-      second = adjustedNow.seconds();
-      hour = hour * Math.PI / 6;
-      drawHand(ctx, hour, radius * 0.5, radius * 0.07);
-      minute = minute * Math.PI / 30;
-      drawHand(ctx, minute, radius * 0.8, radius * 0.07);
-      second = second * Math.PI / 30;
-      drawHand(ctx, second, radius * 0.9, radius * 0.02);
-    };
-    function drawHand(ctx, pos, length, width) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.lineWidth = width;
-      ctx.lineCap = "round";
-      ctx.moveTo(0, 0);
-      ctx.rotate(pos);
-      ctx.lineTo(0, -length);
-      ctx.stroke();
-      ctx.rotate(-pos);
-      ctx.restore();
-    };
-    function getRandomInt(min, max) {
-      min = Math.ceil(min);
-      max = Math.floor(max);
-      return Math.floor(Math.random() * (max - min)) + min;
-    };
 });
+
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  columns = Math.ceil(canvas.width / 200);
+  rows = Math.ceil((canvas.height / canvas.width) * columns);
+  numClocks = rows * columns;
+  offset = parseInt(Math.floor(Math.random() * numClocks));
+  console.log(offset);
+  xTranslate = canvas.width / columns;
+  yTranslate = canvas.height / rows;
+  var smallerDimension = Math.min(xTranslate, yTranslate);
+  radius = .8 * smallerDimension / 2;
+
+
+  /**
+   * Your drawings need to be inside this function otherwise they will be reset when
+   * you resize the browser window and the canvas goes will be cleared.
+   */
+}
+
+
+function draw() {
+  ctx.fillStyle = '#000000';
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 1;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  var i;
+  for (i = 0; i < rows; i++) {
+    for (j = 0; j < columns; j++) {
+      ctx.save();
+      ctx.translate(j * xTranslate + xTranslate/2, i * yTranslate + yTranslate/2);
+      var clockIndex = parseInt(i * columns + j)
+      var factor = 1 + ((clockIndex - offset) * -.01);
+      drawClock(factor);
+      ctx.restore();
+    }
+  };
+}
+
+function drawClock(factor) {
+  if (factor == 1) {
+    ctx.strokeStyle = '#000000'
+    ctx.fillStyle = '#ffffff';
+  }
+  drawFace(factor);
+  drawNumbers(factor);
+  drawTime(factor);
+};
+function drawFace(factor) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(0, 0, radius, 0, 2 * Math.PI);
+  if (factor == 1) {
+    ctx.fill();
+  }
+  ctx.stroke();
+  ctx.restore();
+};
+function drawNumbers() {
+  var divisions = 60;
+  for (var i = 0; i < 60; i++) {
+    ctx.save();
+    ctx.beginPath();
+    var num = i + 1;
+    var ang = num * (Math.PI * 2) / divisions;
+    ctx.rotate(ang);
+    ctx.moveTo(.9 * radius, 0);
+    if (i % 5 == 0) {
+      ctx.moveTo(.85 * radius, 0);
+      ctx.lineTo(.95 * radius, 0);
+    } else {
+      ctx.lineWidth = .9;
+      ctx.moveTo(.9 * radius, 0);
+      ctx.lineTo(.95 * radius, 0);
+    }
+    ctx.stroke();
+    ctx.restore();
+  };
+};
+function drawTime(factor) {
+  var adjustedNow, elapsed, hour, minute, second;
+  elapsed = moment().diff(start);
+  adjustedNow = moment(start).add(elapsed * factor, 'milliseconds');
+
+  hour = adjustedNow.hours() % 12;
+  minute = adjustedNow.minutes();
+  second = adjustedNow.seconds();
+
+  hour = hour * Math.PI / 6;
+  minute = minute * Math.PI / 30;
+  second = second * Math.PI / 30;
+
+  drawHand(ctx, hour, radius * 0.5, 1.3);
+  drawHand(ctx, minute, radius * 0.75, 1.1);
+  drawHand(ctx, second, radius * 0.9, 1);
+};
+function drawHand(ctx, pos, length, width) {
+  ctx.save();
+  ctx.lineWidth = width
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.rotate(pos);
+  ctx.lineTo(0, -length);
+  ctx.stroke();
+  ctx.restore();
+};
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min)) + min;
+};
