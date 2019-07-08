@@ -7,6 +7,7 @@ var canvas;
 var start;
 var clocks;
 var radius;
+var rateStep = -.001;
 
 $(document).ready( function() {
   start = moment();
@@ -31,9 +32,11 @@ function resizeCanvas() {
   canvas.height = window.innerHeight;
   columns = Math.ceil(canvas.width / 200);
   rows = Math.ceil((canvas.height / canvas.width) * columns);
-  numClocks = rows * columns;
-  offset = parseInt(Math.floor(Math.random() * numClocks));
-  console.log(offset);
+  var newNumClocks = rows * columns
+  if (numClocks != newNumClocks) {
+    numClocks = newNumClocks;
+    offset = parseInt(Math.floor(Math.random() * numClocks));
+  }
   xTranslate = canvas.width / columns;
   yTranslate = canvas.height / rows;
   var smallerDimension = Math.min(xTranslate, yTranslate);
@@ -51,14 +54,14 @@ function draw() {
   ctx.fillStyle = '#000000';
   ctx.strokeStyle = "#ffffff";
   ctx.lineWidth = 1;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   var i;
   for (i = 0; i < rows; i++) {
     for (j = 0; j < columns; j++) {
       ctx.save();
       ctx.translate(j * xTranslate + xTranslate/2, i * yTranslate + yTranslate/2);
       var clockIndex = parseInt(i * columns + j)
-      var factor = 1 + ((clockIndex - offset) * -.01);
+      var factor = 1 + ((clockIndex - offset) * rateStep);
       drawClock(factor);
       ctx.restore();
     }
