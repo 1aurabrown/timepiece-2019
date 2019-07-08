@@ -52,7 +52,7 @@ function parseParams() {
       detailed Ticks    false: renders only hours, true: renders minutes and hours
       allHands          false: renders only second hand, true: renders second, minute and hour hands
   */
-  rateStep = -.00001 * params.rate || 1
+  rateStep = -.00001 * (params.rate || 1)
   unitDimension = params.dimension || 300;
   radiusMultiplier = params.radius || .85;
   invertActual = params.invertActual == 1 || params.invertActual == 'true' || false;
