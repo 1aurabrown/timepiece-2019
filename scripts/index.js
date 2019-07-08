@@ -8,9 +8,12 @@ var start;
 var clocks;
 var radius;
 var rateStep = -.001;
+var unitDimension = 300;
+var dpr;
 
 $(document).ready( function() {
   start = moment();
+  dpr = window.devicePixelRatio || 1;
   canvas = document.getElementById('canvas');
   ctx = canvas.getContext('2d');
   ctx.webkitImageSmoothingEnabled = true;
@@ -28,20 +31,26 @@ $(document).ready( function() {
 
 
 function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  columns = Math.ceil(canvas.width / 200);
-  rows = Math.ceil((canvas.height / canvas.width) * columns);
+  var width = window.innerWidth;
+  var height = window.innerHeight;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  canvas.style.width = width;
+  canvas.style.height = height;
+  columns = Math.max(2, Math.ceil(width / unitDimension));
+  rows = Math.max(2, Math.ceil((height / width) * columns));
+
   var newNumClocks = rows * columns
   if (numClocks != newNumClocks) {
     numClocks = newNumClocks;
     offset = parseInt(Math.floor(Math.random() * numClocks));
   }
-  xTranslate = canvas.width / columns;
-  yTranslate = canvas.height / rows;
+  xTranslate = width / columns;
+  yTranslate = height / rows;
   var smallerDimension = Math.min(xTranslate, yTranslate);
   radius = .8 * smallerDimension / 2;
 
+  ctx.scale(dpr, dpr);
 
   /**
    * Your drawings need to be inside this function otherwise they will be reset when
@@ -69,19 +78,23 @@ function draw() {
 }
 
 function drawClock(factor) {
+  var invert = false;
   if (factor == 1) {
+    // invert = true;
+  }
+  if (invert) {
     ctx.strokeStyle = '#000000'
     ctx.fillStyle = '#ffffff';
   }
-  drawFace(factor);
-  drawNumbers(factor);
-  drawTime(factor);
+  drawFace(invert);
+  // drawNumbers(invert);
+  drawTime(factor, invert);
 };
-function drawFace(factor) {
+function drawFace(invert) {
   ctx.save();
   ctx.beginPath();
   ctx.arc(0, 0, radius, 0, 2 * Math.PI);
-  if (factor == 1) {
+  if (invert) {
     ctx.fill();
   }
   ctx.stroke();
