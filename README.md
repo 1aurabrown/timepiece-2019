@@ -11,3 +11,4 @@
 | ticks | render lines representing numbers around the perimeter of the clock
 | detailed Ticks | false: renders only hours, true: renders minutes and hours
 | allHands | false: renders only second hand, true: renders second, minute and hour hands
+| reloadInterval | refresh the page every X minutes (never refreshes by default)

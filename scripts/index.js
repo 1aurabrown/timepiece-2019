@@ -19,6 +19,8 @@ var renderHourHand;
 
 var invertActual;
 
+var reloadInterval;
+
 const twoPi = Math.PI * 2;
 
 $(document).ready( function() {
@@ -37,7 +39,11 @@ $(document).ready( function() {
   window.setInterval(function() {
     window.requestAnimationFrame(draw);
   }, 50)
-
+  if(reloadInterval && reloadInterval > 0) {
+    window.setTimeout(function() {
+      location.reload()
+    }, reloadInterval * 1000 * 60);
+  }
 });
 
 function parseParams() {
@@ -59,6 +65,7 @@ function parseParams() {
   renderTicks = params.ticks == 1 || params.ticks == 'true' || false;
   renderDetailedTicks = params.detailedTicks == 1 || params.detailedTicks == 'true' || false;
   renderAllHands = params.allHands == 1 || params.allHands == 'true' || false;
+  reloadInterval = parseInt(params.reloadInterval);
 }
 
 function resizeCanvas() {
