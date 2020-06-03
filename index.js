@@ -1,30 +1,54 @@
-var columns;
-var rows;
-var ctx;
-var numClocks;
-var offset;
-var canvas;
-var start = moment();;
-var dpr;
+var columns,
+  rows,
+  ctx,
+  numClocks,
+  offset,
+  canvas,
+  dpr,
+  renderAllHands,
+  radiusMultiplier,
+  rateStep,
+  unitDimension,
+  radius,
+  renderTicks,
+  renderDetailedTicks,
+  invertActual,
+  xTranslate,
+  yTranslate;
 
-var rateStep;
-var unitDimension;
-var radius;
-
-var renderTicks;
-var renderDetailedTicks;
-
-var renderMinuteHand;
-var renderHourHand;
-
-var invertActual;
-
-var reloadInterval;
-
+const start = moment();
 const twoPi = Math.PI * 2;
 
+/*    PARAMETERS
+    rate              multiplier representing discrepancy between the rate of each clock
+    dimension         target pixel dimension of each unit in the clock grid
+    radius            clock face size in relation to grid unit dimension
+                      (value of 1 means clock face perimeters will touch each other)
+    invertActual      highlight the clock which shows the actual time
+    ticks             render lines representing numbers around the perimeter of the clock
+    detailedTicks    false: renders only hours, true: renders minutes and hours
+    allHands          false: renders only second hand, true: renders second, minute and hour hands
+*/
+
+var params = {
+  rate: 1,
+  dimension: (Math.random() * 200) + 100,
+  radius: .8,
+  invertActual: false,
+  ticks: Math.random() < 0.5,
+  detailedTicks: Math.random() < 0.5,
+  allHands: Math.random() < 0.5
+};
+
+rateStep = -0.00001 * (params.rate || 1);
+unitDimension = params.dimension || 300;
+radiusMultiplier = params.radius || 0.85;
+invertActual = params.invertActual == 1 || params.invertActual == 'true' || false;
+renderTicks = params.ticks == 1 || params.ticks == 'true' || false;
+renderDetailedTicks = params.detailedTicks == 1 || params.detailedTicks == 'true' || false;
+renderAllHands = params.allHands == 1 || params.allHands == 'true' || false;
+
 $(document).ready( function() {
-  parseParams();
 
   dpr = window.devicePixelRatio || 1;
   canvas = document.getElementById('canvas');
@@ -39,34 +63,8 @@ $(document).ready( function() {
   window.setInterval(function() {
     window.requestAnimationFrame(draw);
   }, 50)
-  if(reloadInterval && reloadInterval > 0) {
-    window.setTimeout(function() {
-      location.reload()
-    }, reloadInterval * 1000 * 60);
-  }
 });
 
-function parseParams() {
-  var params = $.deparam(window.location.search.split('?')[1] || '')
-  /*    PARAMETERS
-      rate              multiplier representing discrepancy between the rate of each clock
-      dimension         target pixel dimension of each unit in the clock grid
-      radius            clock face size in relation to grid unit dimension
-                        (value of 1 means clock face perimeters will touch each other)
-      invertActual      highlight the clock which shows the actual time
-      ticks             render lines representing numbers around the perimeter of the clock
-      detailed Ticks    false: renders only hours, true: renders minutes and hours
-      allHands          false: renders only second hand, true: renders second, minute and hour hands
-  */
-  rateStep = -.00001 * (params.rate || 1)
-  unitDimension = params.dimension || 300;
-  radiusMultiplier = params.radius || .85;
-  invertActual = params.invertActual == 1 || params.invertActual == 'true' || false;
-  renderTicks = params.ticks == 1 || params.ticks == 'true' || false;
-  renderDetailedTicks = params.detailedTicks == 1 || params.detailedTicks == 'true' || false;
-  renderAllHands = params.allHands == 1 || params.allHands == 'true' || false;
-  reloadInterval = parseInt(params.reloadInterval);
-}
 
 function resizeCanvas() {
   var width = window.innerWidth;
@@ -104,7 +102,7 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   var i;
   for (i = 0; i < rows; i++) {
-    for (j = 0; j < columns; j++) {
+    for (var j = 0; j < columns; j++) {
       ctx.save();
       ctx.translate(j * xTranslate + xTranslate/2, i * yTranslate + yTranslate/2);
       var clockIndex = parseInt(i * columns + j)
@@ -121,15 +119,16 @@ function drawClock(factor) {
     invert = true;
   }
   if (invert) {
-    ctx.strokeStyle = '#000000'
+    ctx.strokeStyle = '#000000';
     ctx.fillStyle = '#ffffff';
   }
   drawFace(invert);
   if (renderTicks) {
-    drawTicks(invert)
+    drawTicks(invert);
   }
   drawTime(factor, invert);
-};
+}
+
 function drawFace(invert) {
   ctx.save();
   ctx.beginPath();
@@ -139,15 +138,17 @@ function drawFace(invert) {
   }
   ctx.stroke();
   ctx.restore();
-};
+}
+
 function drawTicks() {
+  var divisions, num, ang;
   if (renderDetailedTicks) {
-    var divisions = 60;
+    divisions = 60;
     for (var i = 0; i < divisions; i++) {
       ctx.save();
       ctx.beginPath();
-      var num = i + 1;
-      var ang = num * twoPi / divisions;
+      num = i + 1;
+      ang = num * twoPi / divisions;
       ctx.rotate(ang);
       if (i % 5 == 0) {
         drawHourTick();
@@ -158,12 +159,12 @@ function drawTicks() {
       ctx.restore();
     }
   } else {
-    var divisions = 12;
-    for (var i = 0; i < divisions; i++) {
+    divisions = 12;
+    for (var j = 0; j < divisions; j++) {
       ctx.save();
       ctx.beginPath();
-      var num = i + 1;
-      var ang = num * twoPi / divisions;
+      num = j + 1;
+      ang = num * twoPi / divisions;
       ctx.rotate(ang);
       drawHourTick();
       ctx.stroke();
@@ -172,13 +173,13 @@ function drawTicks() {
   }
 }
 function drawHourTick() {
-  ctx.moveTo(.85 * radius, 0);
-  ctx.lineTo(.95 * radius, 0);
+  ctx.moveTo(0.85 * radius, 0);
+  ctx.lineTo(0.95 * radius, 0);
 }
 function drawMinuteTick() {
-  ctx.lineWidth = .9;
-  ctx.moveTo(.9 * radius, 0);
-  ctx.lineTo(.95 * radius, 0);
+  ctx.lineWidth = 0.9;
+  ctx.moveTo(0.9 * radius, 0);
+  ctx.lineTo(0.95 * radius, 0);
 }
 function drawTime(factor) {
   var adjustedNow, elapsed, hour, minute, second;
@@ -196,19 +197,16 @@ function drawTime(factor) {
     minute = adjustedNow.minutes() * twoPi / 60;
     drawHand(ctx, minute, radius * 0.75, 1.1);
   }
-};
+}
+
 function drawHand(ctx, pos, length, width) {
   ctx.save();
-  ctx.lineWidth = width
+  ctx.lineWidth = width;
   ctx.beginPath();
   ctx.moveTo(0, 0);
   ctx.rotate(pos);
   ctx.lineTo(0, -length);
   ctx.stroke();
   ctx.restore();
-};
-function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min)) + min;
-};
+}
+
